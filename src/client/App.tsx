@@ -1,6 +1,8 @@
 import * as React from 'react';
 import moment from 'moment';
 
+import BarChart from './components/BarChart';
+
 import { getTime, calcPay } from './utils/getTime';
 
 // import moduleName from './components/Days';
@@ -26,6 +28,7 @@ class App extends React.Component<IAppProps, IAppState> {
     let data = await res.json();
     this.setState({ data: data.data, pagination: data.pagination })
   }
+
 
   render() {
     let payWeek = new Array(); //to keep track of weekly gross pay
@@ -61,19 +64,27 @@ class App extends React.Component<IAppProps, IAppState> {
         if (moment(ele.startTime).format('ddd') === 'Sat') {
           isSat = 'shadow border-success';
 
-          payWeek.forEach(e => weekHrs += e)
-          payWeek = [];
+          payWeek.forEach((e, key) => {
+            payWeek[key] = calcPay(e + '').toFixed(2)
+            weekHrs += e
+          })
+          console.log(payWeek);
 
-          let pay = calcPay(weekHrs + '');
-
-          summary = <div className='col border-top border-bottom border-danger bg-light'>Week Summary
-            <div>Total Hours: {getTime(weekHrs + '').toFixed(2)}hrs</div>
-            <div>Total pay: $ <span className='text-success'> {pay.toFixed(2)}</span></div>
+          summary = <div className='row mx-1 border-top border-bottom border-danger bg-light'>
+            <div className='col'>
+              <u>Week Summary</u>
+              <div>Total Hours: {getTime(weekHrs + '').toFixed(2)}hrs</div>
+              <div>Total pay: $ <span className='text-success'> {calcPay(weekHrs + '').toFixed(2)}</span></div>
+            </div>
+            <div className='col'>
+              <BarChart week={payWeek} />
+            </div>
           </div>
+          payWeek = [];
           weekHrs = 0;
         }
 
-        return <div className={`border rounded my-2 ${isSat + lawHour}`} key={key} >
+        return <div className={`border  rounded my-2 ${isSat + lawHour}`} key={key} >
           {isSat = ''}
 
           <Day time={ele.startTime}
@@ -103,33 +114,31 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     return (
-      <div>
-        <div className='container my-2'>
-          <button className='btn btn-primary col-2' onClick={e => {
-            if (this.state.pg > 1) {
-              this.getData(this.state.pg - 1)
-              this.setState({ pg: this.state.pg - 1 })
-            }
+      <div className='container my-2 '>
+        <button className='btn bg-light border text-primary col-2' onClick={e => {
+          if (this.state.pg > 1) {
+            this.getData(this.state.pg - 1)
+            this.setState({ pg: this.state.pg - 1 })
           }
-          }>{`< Last`}</button>
-          <button className='btn btn-primary float-right col-2' onClick={e => {
-            if (this.state.pg < 3) {
-              this.getData(this.state.pg + 1)
-              //setState is async
-              this.setState({ pg: this.state.pg + 1 })
-            }
-          }}> {`Next >`}</button>
+        }
+        }>{`< Last`}</button>
+        <button className='btn bg-light border text-primary float-right col-2' onClick={e => {
+          if (this.state.pg < 3) {
+            this.getData(this.state.pg + 1)
+            //setState is async
+            this.setState({ pg: this.state.pg + 1 })
+          }
+        }}> {`Next >`}</button>
 
-          {(this.state.data) ?
-            <div className='row'>
-              <h1 className='col my-2' >{this.state.data[0].driver.name}</h1>
-              <p className='col-1 mt-3'>Page: {this.state.pg}</p>
-            </div>
-            : <></>}
+        {(this.state.data) ?
+          <div className='row'>
+            <h1 className='col my-2' >{this.state.data[0].driver.name}</h1>
+            <p className='col-1 mt-3'>{this.state.pg}</p>
+          </div>
+          : <></>}
 
-          <div>{Days}</div>
-        </div >
-      </div>
+        <div>{Days}</div>
+      </div >
     )
   }
 }

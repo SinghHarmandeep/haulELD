@@ -5,7 +5,7 @@ import Shift from './shift';
 
 const day = (props: any) => {
   return (
-    < div className="row mx-1 my-2" >
+    < div className="row mx-1 my-2 card-header" >
       <h1 className='col'>
         {moment(props.time).format('ddd, MMM Do')}
       </h1 >
