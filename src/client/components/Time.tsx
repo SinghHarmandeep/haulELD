@@ -11,10 +11,10 @@ const Time = (props: any) => {
     let minute: string;
     let second: string;
     let hr = moment.duration(time).hours();
-    (hr > 9) ? hour = "" + hr : hour = '0' + hr;
     let min = moment.duration(time).minutes();
-    (min > 9) ? minute = "" + min : minute = '0' + min;
     let sec = moment.duration(time).seconds();
+    (hr > 9) ? hour = "" + hr : hour = '0' + hr;
+    (min > 9) ? minute = "" + min : minute = '0' + min;
     (sec > 9) ? second = "" + sec : second = "0" + sec;
     display = " " + hour + ":" + minute + ":" + second;
   }
@@ -22,5 +22,4 @@ const Time = (props: any) => {
     <>{(time === 0) ? " " + 0 : display}</ >
   )
 }
-
 export default Time;
