@@ -112,7 +112,6 @@ class App extends React.Component<IAppProps, IAppState> {
             }
           }
           }>{`< Last`}</button>
-
           <button className='btn btn-primary float-right col-2' onClick={e => {
             if (this.state.pg < 3) {
               this.getData(this.state.pg + 1)
@@ -121,7 +120,12 @@ class App extends React.Component<IAppProps, IAppState> {
             }
           }}> {`Next >`}</button>
 
-          {(this.state.data) ? <h1 className='my-2' >{this.state.data[0].driver.name}</h1> : <></>}
+          {(this.state.data) ?
+            <div className='row'>
+              <h1 className='col my-2' >{this.state.data[0].driver.name}</h1>
+              <p className='col-1 mt-3'>Page: {this.state.pg}</p>
+            </div>
+            : <></>}
 
           <div>{Days}</div>
         </div >
