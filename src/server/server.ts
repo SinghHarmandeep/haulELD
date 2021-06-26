@@ -10,7 +10,7 @@ app.use(express.static('public'));
 app.get('/data/:file', (req, res) => {
 
   //first page
-  let file1 = path.join(__dirname, `/jsonData/p${req.params.file}.json`)
+  let file1 = path.join(__dirname, `../jsonData/p${req.params.file}.json`)
 
   let raw: any = fs.readFileSync(file1);
   let log = JSON.parse(raw);
