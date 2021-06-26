@@ -7,12 +7,13 @@ const app = express();
 
 app.use(express.static('public'));
 
-app.get('/data', (req, res) => {
+app.get('/data/:file', (req, res) => {
 
   //first page
-  let file = path.join(__dirname, '/jsonData/p2.json')
-  let rawData: any = fs.readFileSync(file);
-  let log = JSON.parse(rawData);
+  let file1 = path.join(__dirname, `/jsonData/p${req.params.file}.json`)
+
+  let raw: any = fs.readFileSync(file1);
+  let log = JSON.parse(raw);
   res.send(JSON.stringify(log));
 })
 

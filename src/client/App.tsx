@@ -1,9 +1,9 @@
 import * as React from 'react';
 import moment from 'moment';
 
-import { getTime } from './utils/getTime';
+import { getTime, calcPay } from './utils/getTime';
 
-import Shift from './components/shift';
+// import moduleName from './components/Days';
 import Day from './components/day';
 import Pay from './components/pay';
 
@@ -13,77 +13,73 @@ class App extends React.Component<IAppProps, IAppState> {
     this.state = {
       data: null,
       pagination: null,
+      pg: 1
     }
   }
 
-  async componentDidMount() {
-    let res = await fetch('/data')
+  componentDidMount() {
+    this.getData()
+  }
+
+  async getData(pg: number = 1) {
+    let res = await fetch(`/data/${pg}`)
     let data = await res.json();
     this.setState({ data: data.data, pagination: data.pagination })
   }
 
   render() {
-    let payWeek = new Array();
-    let lastSeven = new Array();
-    let weekHrs: number = 0;
-    let Days: any;
-    let hours: string;
-    let temp: number = 0;
+    let payWeek = new Array(); //to keep track of weekly gross pay
+    let lastSeven = new Array(); // hours worked last seven days
+    let weekHrs: number = 0; // hours worked in the week, resets every sunday
+    let Days: any; // all the log days
+    let hours: number; //sum of number of hours worked last 7 days
+    let lawHour: string = "" //used to show warning, the driver excedded 80% of 70 hours
+    let temp: number = 0; //temp variable to hold count for variable hours
+
     if (this.state.data) {
       Days = this.state.data.map((ele: any, key: number) => {
-        console.log(key + 1);
-        if (lastSeven.length > 7) {
-          console.log('length is greater');
-          console.log(lastSeven);
-          lastSeven.pop();
-          console.log(lastSeven);
 
-        } else {
-          console.log('length is smaller');
-        }
+        if (lastSeven.length > 7) lastSeven.pop();
+
         lastSeven.unshift(ele.dutyStatusDurations.activeDurationMs)
-        console.log(lastSeven.join(", "));
 
-        temp = 0;
+        temp = 0; //added up hours for last seven days
         lastSeven.forEach(e => {
           temp += e;
         })
-        hours = getTime(''+ temp).toFixed(2);
-        console.log(hours);
+
+        hours = getTime('' + temp);
+        if (hours > 56) {
+          lawHour = 'border-danger'
+        } else {
+          lawHour = ''
+        }
 
         payWeek.push(ele.dutyStatusDurations.activeDurationMs);
         let summary: any;
         let isSat: string = '';
         if (moment(ele.startTime).format('ddd') === 'Sat') {
-          isSat = 'shadow';
-          payWeek.forEach(e => {
-            // let time = getTime(e);
-            weekHrs += e;
-          })
+          isSat = 'shadow border-success';
+
+          payWeek.forEach(e => weekHrs += e)
           payWeek = [];
-          let pay = 0;
-          weekHrs = getTime(weekHrs + '')
-          if (weekHrs > 40) { pay = (40 * 22) + ((weekHrs - 40) * 33) }
-          pay = weekHrs * 22;
+
+          let pay = calcPay(weekHrs + '');
+
           summary = <div className='col border-top border-bottom border-danger bg-light'>Week Summary
-            <div>Hours: {weekHrs.toFixed(2)}hrs</div>
-            <div>Pay: ${pay.toFixed(2)}</div>
+            <div>Total Hours: {getTime(weekHrs + '').toFixed(2)}hrs</div>
+            <div>Total pay: $ <span className='text-success'> {pay.toFixed(2)}</span></div>
           </div>
           weekHrs = 0;
         }
 
-        return <div className={`border rounded my-2 ${isSat}`} key={key} >
+        return <div className={`border rounded my-2 ${isSat + lawHour}`} key={key} >
           {isSat = ''}
-          {key + 1}
-          < div className="row mx-1 my-2" >
-            <Day time={ele.startTime} />
-            {
-              (ele.dutyStatusDurations.activeDurationMs === 0) ?
-                <div className="mr-2" >No activity today!</div> :
-                <Shift on={ele.dutyStatusDurations.activeDurationMs}
-                  off={ele.dutyStatusDurations.offDutyDurationMs} />
-            }
-          </div >
+
+          <Day time={ele.startTime}
+            on={ele.dutyStatusDurations.activeDurationMs}
+            off={ele.dutyStatusDurations.offDutyDurationMs} />
+
           {(ele.dutyStatusDurations.activeDurationMs === 0) ?
             <></>
             :
@@ -93,23 +89,43 @@ class App extends React.Component<IAppProps, IAppState> {
                 <p >To: {moment(ele.endTime).format('ddd, MMM-D h:mm:ss a')}</p>
               </div>
               <h1>
-                <Pay time={ele.dutyStatusDurations.activeDurationMs} total={weekHrs} />
+                <Pay time={ele.dutyStatusDurations.activeDurationMs} />
               </h1>
             </div>
           }
           {summary}
-          <div className="row mx-1 mt-2">
-            <p className='ml-2'>Hours worked past 7 days: &nbsp;</p>
-            {hours}
+          <div className={`row mx-1 mt-2`}>
+            <p className={`ml-2`} >Hours worked past 7 days: &nbsp;</p>
+            {hours.toFixed(2)}
           </div>
         </div >
       })
     }
 
     return (
-      <div className='container'>
-        <div>{Days}</div>
-      </div >
+      <div>
+        <div className='container my-2'>
+          <button className='btn btn-primary col-2' onClick={e => {
+            if (this.state.pg > 1) {
+              this.getData(this.state.pg - 1)
+              this.setState({ pg: this.state.pg - 1 })
+            }
+          }
+          }>{`< Last`}</button>
+
+          <button className='btn btn-primary float-right col-2' onClick={e => {
+            if (this.state.pg < 3) {
+              this.getData(this.state.pg + 1)
+              //setState is async
+              this.setState({ pg: this.state.pg + 1 })
+            }
+          }}> {`Next >`}</button>
+
+          {(this.state.data) ? <h1 className='my-2' >{this.state.data[0].driver.name}</h1> : <></>}
+
+          <div>{Days}</div>
+        </div >
+      </div>
     )
   }
 }
@@ -117,6 +133,7 @@ class App extends React.Component<IAppProps, IAppState> {
 export interface IAppState {
   data: any
   pagination: any
+  pg: number
 }
 export interface IAppProps {
 }
